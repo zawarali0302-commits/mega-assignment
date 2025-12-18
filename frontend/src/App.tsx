@@ -4,7 +4,6 @@ import CustomerListComponent from "./components/CustomerListComponent";
 import AddCustomerForm from "./components/AddCustomerForm";
 import HeaderComponent from "./components/HeaderComponent";
 import FooterComponent from "./components/FooterComponent";
-import api from "./axios";
 
 function App() {
   const [customers, setCustomers] = useState<CustomerType[]>([]);
@@ -15,8 +14,12 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get<CustomerType[]>("/api/customers");
-      setCustomers(response.data);
+      const response = await fetch("http://localhost:3000/api/customers");
+      if (!response.ok) {
+        throw new Error("Failed to fetch customers");
+      }
+      const data= await response.json();
+      setCustomers(data);
     } catch (error) {
       console.error("Error fetching customers:", error);
       setError("An error occurred while fetching customers.");
@@ -31,8 +34,18 @@ function App() {
 
   const handleAddCustomer = async (newCustomer: Omit<CustomerType, "id" | "imageUrl">) => {
     try {
-      const response = await api.post<CustomerType>("/api/customers", newCustomer);
-      setCustomers((prev) => [...prev, response.data]);
+      const response = await fetch("http://localhost:3000/api/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newCustomer),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to add customer");
+      }
+      const createdCustomer = await response.json();
+      setCustomers((prev) => [...prev, createdCustomer]);
     } catch (error) {
       console.error("Error adding customer:", error);
       setError("An error occurred while adding the customer.");
@@ -41,8 +54,10 @@ function App() {
 
   const handleDeleteCustomer = async (customerId: string) => {
     try {
-      const response = await api.delete(`/api/customers/${customerId}`);
-      if (response.status !== 204) {
+      const response = await fetch(`http://localhost:3000/api/customers/${customerId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
         throw new Error("Failed to delete customer");
       }
       setCustomers((prev) => prev.filter((customer) => customer.id !== customerId));
@@ -54,8 +69,14 @@ function App() {
 
   const handleEditCustomer = async (updatedCustomer: CustomerType) => {
     try {
-      const response = await api.put(`/api/customers/${updatedCustomer.id}`, updatedCustomer);
-      if (!response.data) {
+      const response = await fetch(`http://localhost:3000/api/customers/${updatedCustomer.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedCustomer),
+      });
+      if (!response.ok) {
         throw new Error("Failed to edit customer");
       }
       setCustomers((prev) =>
