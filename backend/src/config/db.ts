@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const Mongo_URI = process.env.MONGO_URI || "mongodb://localhost:27017/mega_assignment"
 
 const connectDB = async () => {
